@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .output {
+            margin-top: 20px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;  /* Allows the response to wrap inside the box */
+            word-wrap: break-word;  /* Break long words if necessary */
+        }
+
+        .error {
+            color: red; /* Style for error messages */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rule Engine</h1>
+
+        <div class="form-group">
+            <label for="rule">Create a Rule</label>
+            <input type="text" id="rule" placeholder="Enter rule (e.g. age > 30 AND department = 'Sales')">
+            <button onclick="createRule()">Create Rule</button>
+        </div>
+
+        <div class="form-group">
+            <label for="rules">Combine Rules (comma separated)</label>
+            <input type="text" id="rules" placeholder="Enter rules (e.g. rule1, rule2)">
+            <button onclick="combineRules()">Combine Rules</button>
+        </div>
+
+        <div class="form-group">
+            <label for="user-data">Evaluate Rule with User Data</label>
+            <textarea id="user-data" rows="3" placeholder='{"age": 35, "department": "Sales"}'></textarea>
+            <button onclick="evaluateRule()">Evaluate Rule</button>
+        </div>
+
+        <div class="output" id="output"></div>
+    </div>
+
+    <script>
+        const apiUrl = 'http://127.0.0.1:5000';
+
+        function createRule() {
+            const ruleString = document.getElementById('rule').value;
+
+            fetch(`${apiUrl}/api/rules`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ rule_string: ruleString })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('output').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            })
+            .catch(error => {
+                document.getElementById('output').innerHTML = `<pre class="error">Error: ${error.message}</pre>`;
+                console.error('Error:', error);
+            });
+        }
+
+        function combineRules() {
+            const rulesString = document.getElementById('rules').value.split(',').map(rule => rule.trim());
+            fetch(`${apiUrl}/api/rules/combine`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ rules: rulesString })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('output').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            })
+            .catch(error => {
+                document.getElementById('output').innerHTML = `<pre class="error">Error: ${error.message}</pre>`;
+                console.error('Error:', error);
+            });
+        }
+
+        function evaluateRule() {
+            const userData = JSON.parse(document.getElementById('user-data').value);
+            const astData = document.getElementById('rule').value;  // Get the AST from the created rule
+
+            fetch(`${apiUrl}/api/rules/evaluate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_data: userData, json_data: astData })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('output').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            })
+            .catch(error => {
+                document.getElementById('output').innerHTML = `<pre class="error">Error: ${error.message}</pre>`;
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
